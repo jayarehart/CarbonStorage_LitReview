@@ -12,7 +12,7 @@ config = json.load(con_file)
 con_file.close()
 
 ## Initialize client
-client = ElsClient(config['apikey'])
+client = ElsClient(config['APIKey'])
 # client.inst_token = config['insttoken']
 
 ## Author example
