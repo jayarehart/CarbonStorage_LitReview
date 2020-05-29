@@ -14,6 +14,7 @@ import pandas as pd
 import itertools
 import numpy as np
 from pybliometrics.scopus import AbstractRetrieval
+from datetime import datetime
 
 ## ------------------------------------------------
 ## Import the queries from the google sheets
@@ -42,6 +43,7 @@ for element in combos_list:
     if element[0] != '' and element[1] != '' and element[2] != '':
         print(element[0] + ' AND ' + element[1] + ' AND ' + element[2])
         searches_list.append('ABS(' + element[0] + ' AND ' + element[1] + ' AND ' + element[2] + ')')
+        # searches_list.append('ABS(' + element[0] + ' AND ' + element[1] + ' AND ' + element[2] + ') AND PUBYEAR > 2010')
 
 col1 = np.linspace(0, len(searches_list)-1, len(searches_list))
 searches_array = np.array(searches_list)
@@ -100,6 +102,21 @@ for index, row in queries_df.iterrows():
     master_df['@_fa'].rename('fa')
     master_df
 
+# save raw search results
+master_df.to_csv('./search_results.csv')
+
+## Code block if need to retain the raw search results
+# master_df = pd.read_csv('./search_results.csv')
+# master_df['prism:coverDate'] = master_df['prism:coverDate'].astype('datetime64[ns]')
+
+
+## Filter data before sending it to google sheets
+# only get "Journal" result type
+master_df_2 = master_df[master_df['prism:aggregationType'] == "Journal"]
+# get publication year
+master_df_2['PUBYEAR'] = master_df_2['prism:coverDate'].dt.year
+# filter only publication year of interest
+master_df_2 = master_df_2[master_df_2['PUBYEAR'] >= 2010]
 
 # Functions to write pandas dataframe back to google sheet
 def iter_pd(df):
@@ -123,7 +140,7 @@ def pandas_to_sheets(pandas_df, sheet, clear = True):
     sheet.update_cells(cells)
 
 # write master_df back to google sheets
-to_sheets = master_df[['dc:identifier', 'dc:title', 'dc:creator', 'prism:publicationName', 'prism:coverDisplayDate', 'prism:doi', 'citedby-count', 'prism:aggregationType']]
+to_sheets = master_df_2[['dc:identifier', 'dc:title', 'dc:creator', 'prism:publicationName', 'prism:coverDisplayDate', 'prism:doi', 'citedby-count', 'prism:aggregationType', 'PUBYEAR']]
 worksheet = gc.open("Search_Terms").worksheet("Query_Results")
 pandas_to_sheets(to_sheets, worksheet)
 
@@ -147,7 +164,4 @@ pandas_to_sheets(queries_df, worksheet)
 
 
 ## Things to-do
-#### -  write back to google sheet with the number of articles for each search query
-#### -  combine dataframe of all articles, ignoring duplicates, including the search query that gave them
-#### -  finish building out queries in the google sheet.
 # -  get abstracts of each article included in the list and write it back to a new sheet in the google sheet
