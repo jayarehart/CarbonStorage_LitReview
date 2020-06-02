@@ -82,7 +82,7 @@ if (s == "y" or s == "Y"):
         print("Read docs for affiliation failed.")
 
 ## Initialize author search object and execute search
-auth_srch = ElsSearch('authlast(pomponi)', 'author')
+auth_srch = ElsSearch('authlast(hart)', 'author')
 auth_srch.execute(client)
 print("auth_srch has", len(auth_srch.results), "results.")
 
@@ -99,10 +99,10 @@ print("doc_srch has", len(doc_srch.results), "results.")
 
 ## Initialize doc search object using ScienceDirect and execute search,
 #   retrieving all results
-doc_srch = ElsSearch("hempcrete", 'sciencedirect')
+doc_srch = ElsSearch("More Timber in Construction: Unanswered Questions and Future Challenges", 'scopus')
 doc_srch.execute(client, get_all=False)
 print("doc_srch has", len(doc_srch.results), "results.")
-
+x = doc_srch.results_df
 
 ## --------------------------------------------
 ## Initialize doc search object using Scopus and execute search, retrieving all results

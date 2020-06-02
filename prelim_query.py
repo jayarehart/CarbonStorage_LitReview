@@ -43,6 +43,7 @@ for element in combos_list:
     if element[0] != '' and element[1] != '' and element[2] != '':
         print(element[0] + ' AND ' + element[1] + ' AND ' + element[2])
         searches_list.append('ABS(' + element[0] + ' AND ' + element[1] + ' AND ' + element[2] + ')')
+        # searches_list.append('ABS(' + element[0] + ' AND ' + element[1] + ' AND ' + element[2] + ')')
         # searches_list.append('ABS(' + element[0] + ' AND ' + element[1] + ' AND ' + element[2] + ') AND PUBYEAR > 2010')
 
 col1 = np.linspace(0, len(searches_list)-1, len(searches_list))
@@ -84,35 +85,41 @@ def search_my_query(my_query):
 # Get list of queries to search for.
 # queries_df = read_gsheet(Workbook="Search_Terms", Worksheet="Queries")
 
-queries_df = pd.DataFrame({'Query':searches_list,'num_results':None})
+# Load search results
+re_search_scopus = False
+if re_search_scopus == True:
+    # Search Scopus
+    queries_df = pd.DataFrame({'Query':searches_list,'num_results':None})
+    master_df = pd.DataFrame()
+    num_results = []
+    for index, row in queries_df.iterrows():
+        print(str(index) + ' / ' + str(len(queries_df)))
+        query = row['Query']
+        query_results_df = search_my_query(query)
+        row['Number_of_Articles'] = query_results_df.shape[0]
+        queries_df['num_results'][index] = query_results_df.shape[0]
+        # num_results.append(query_results_df.shape[0])
 
-master_df = pd.DataFrame()
-num_results = []
-for index, row in queries_df.iterrows():
-    print(str(index) + ' / ' + str(len(queries_df)))
-    query = row['Query']
-    query_results_df = search_my_query(query)
-    row['Number_of_Articles'] = query_results_df.shape[0]
-    queries_df['num_results'][index] = query_results_df.shape[0]
-    # num_results.append(query_results_df.shape[0])
+        print(query_results_df.shape[0])
+        master_df = master_df.append(query_results_df)
+        # master_df = master_df.drop_duplicates(subset='prism:doi')
+        master_df['@_fa'].rename('fa')
+        master_df
 
-    print(query_results_df.shape[0])
-    master_df = master_df.append(query_results_df)
-    master_df = master_df.drop_duplicates(subset='prism:doi')
-    master_df['@_fa'].rename('fa')
-    master_df
-
-# save raw search results
-master_df.to_csv('./search_results.csv')
-
-## Code block if need to retain the raw search results
-# master_df = pd.read_csv('./search_results.csv')
-# master_df['prism:coverDate'] = master_df['prism:coverDate'].astype('datetime64[ns]')
-
+        # save raw search results
+        master_df.to_csv('./search_results.csv')
+    else:
+        ## Code block if need to retain the raw search results
+        master_df = pd.read_csv('./search_results.csv')
+        master_df['prism:coverDate'] = master_df['prism:coverDate'].astype('datetime64[ns]')
 
 ## Filter data before sending it to google sheets
+# drop duplicate search returns
+master_df_2 = master_df.drop_duplicates(subset='prism:doi', keep="first")
+test = master_df[master_df.duplicated(subset='prism:doi')]
+
 # only get "Journal" result type
-master_df_2 = master_df[master_df['prism:aggregationType'] == "Journal"]
+master_df_2 = master_df_2[master_df_2['prism:aggregationType'] == "Journal"]
 # get publication year
 master_df_2['PUBYEAR'] = master_df_2['prism:coverDate'].dt.year
 # filter only publication year of interest
