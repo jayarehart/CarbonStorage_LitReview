@@ -42,7 +42,8 @@ searches_list = []
 for element in combos_list:
     if element[0] != '' and element[1] != '' and element[2] != '':
         print(element[0] + ' AND ' + element[1] + ' AND ' + element[2])
-        searches_list.append('ABS(' + element[0] + ' AND ' + element[1] + ' AND ' + element[2] + ')')
+        searches_list.append('TITLE-ABS-KEY(' + element[0] + ' AND ' + element[1] + ' AND ' + element[2] + ')')
+        # searches_list.append('ABS(' + element[0] + ' AND ' + element[1] + ' AND ' + element[2] + ')')
         # searches_list.append('ABS(' + element[0] + ' AND ' + element[1] + ' AND ' + element[2] + ')')
         # searches_list.append('ABS(' + element[0] + ' AND ' + element[1] + ' AND ' + element[2] + ') AND PUBYEAR > 2010')
 
@@ -86,16 +87,17 @@ def search_my_query(my_query):
 # queries_df = read_gsheet(Workbook="Search_Terms", Worksheet="Queries")
 
 # Load search results
-re_search_scopus = False
+re_search_scopus = True
 if re_search_scopus == True:
     # Search Scopus
-    queries_df = pd.DataFrame({'Query':searches_list,'num_results':None})
+    queries_df = pd.DataFrame({'Query':searches_list,'num_results':None,'query_searched':None})
     master_df = pd.DataFrame()
     num_results = []
     for index, row in queries_df.iterrows():
         print(str(index) + ' / ' + str(len(queries_df)))
         query = row['Query']
         query_results_df = search_my_query(query)
+        query_results_df['query_searched'] = row['Query']
         row['Number_of_Articles'] = query_results_df.shape[0]
         queries_df['num_results'][index] = query_results_df.shape[0]
         # num_results.append(query_results_df.shape[0])
@@ -107,11 +109,12 @@ if re_search_scopus == True:
         master_df
 
         # save raw search results
-        master_df.to_csv('./search_results.csv')
-    else:
-        ## Code block if need to retain the raw search results
-        master_df = pd.read_csv('./search_results.csv')
-        master_df['prism:coverDate'] = master_df['prism:coverDate'].astype('datetime64[ns]')
+    master_df.to_csv('./search_results.csv')
+
+else:
+    ## Code block if need to retain the raw search results
+    master_df = pd.read_csv('./search_results.csv')
+    master_df['prism:coverDate'] = master_df['prism:coverDate'].astype('datetime64[ns]')
 
 ## Filter data before sending it to google sheets
 # drop duplicate search returns
@@ -147,7 +150,7 @@ def pandas_to_sheets(pandas_df, sheet, clear = True):
     sheet.update_cells(cells)
 
 # write master_df back to google sheets
-to_sheets = master_df_2[['dc:identifier', 'dc:title', 'dc:creator', 'prism:publicationName', 'prism:coverDisplayDate', 'prism:doi', 'citedby-count', 'prism:aggregationType', 'PUBYEAR']]
+to_sheets = master_df_2[['dc:identifier', 'dc:title', 'dc:creator', 'prism:publicationName', 'prism:coverDisplayDate', 'prism:doi', 'citedby-count', 'prism:aggregationType', 'PUBYEAR', 'query_searched']]
 worksheet = gc.open("Search_Terms").worksheet("Query_Results")
 pandas_to_sheets(to_sheets, worksheet)
 
